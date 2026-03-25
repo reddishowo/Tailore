@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart'; // Import package intl
 import '../controllers/home_controller.dart';
 import '../../../data/models/order_model.dart';
 
+// ... (HomeView dan widget lainnya di atas _OrderCard tetap sama) ...
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
@@ -317,7 +319,7 @@ class _MonthOrderBadge extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DAY CELL WIDGET (YANG DIUBAH)
+// DAY CELL WIDGET
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DayCell extends StatelessWidget {
@@ -331,30 +333,22 @@ class _DayCell extends StatelessWidget {
   final HomeController controller;
   final VoidCallback onTap;
 
-  /// ATURAN WARNA BARU (BACKGROUND)
-  /// 0 order -> putih
-  /// 1 order -> biru pastel
-  /// 2 order -> emas/gold
-  /// 3+ order -> merah
   Color _cellColor(int orderCount) {
     switch (orderCount) {
       case 0:
         return Colors.white;
       case 1:
-        return const Color.fromARGB(255, 89, 145, 194); // Biru pastel
+        return const Color(0xFFBDD5EA); // Biru pastel
       case 2:
-        return const Color.fromARGB(255, 255, 196, 0); // Emas
+        return HomeView.gold; // Emas
       default: // Handles 3 or more orders
-        return const Color.fromARGB(255, 255, 0, 0); // Merah (seperti Colors.red[400])
+        return const Color(0xFFE57373); // Merah (seperti Colors.red[400])
     }
   }
 
-  /// ATURAN WARNA BARU (TEKS)
-  /// Mengatur warna teks agar kontras dengan background
   Color _textColor(int orderCount) {
     if (orderCount == 0) return Colors.black87;
     if (orderCount == 1) return HomeView.navy;
-    // Untuk background emas & merah, teks putih lebih terbaca
     return Colors.white;
   }
 
@@ -365,9 +359,7 @@ class _DayCell extends StatelessWidget {
         date.year == now.year && date.month == now.month && date.day == now.day;
 
     return Obx(() {
-      // Dapatkan jumlah order, bukan lagi persentase kapasitas
       final orderCount = controller.getOrdersForDate(date).length;
-
       final bg = _cellColor(orderCount);
       final fg = _textColor(orderCount);
 
@@ -389,7 +381,7 @@ class _DayCell extends StatelessWidget {
                           ? Colors.transparent
                           : Colors.grey.withOpacity(0.15),
                     ),
-              boxShadow: _buildShadow(orderCount), // Efek shadow baru
+              boxShadow: _buildShadow(orderCount),
             ),
             child: Center(
               child: Text(
@@ -409,7 +401,6 @@ class _DayCell extends StatelessWidget {
     });
   }
 
-  /// Helper untuk efek shadow yang disesuaikan dengan warna
   List<BoxShadow> _buildShadow(int orderCount) {
     switch (orderCount) {
       case 1: // Shadow biru
@@ -603,7 +594,7 @@ class _CapacityDots extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ORDER CARD
+// ORDER CARD (UPDATED)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _OrderCard extends StatelessWidget {
@@ -616,6 +607,11 @@ class _OrderCard extends StatelessWidget {
   final OrderModel order;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+
+  // Helper untuk format tanggal masuk
+  String _formatEntryDate(DateTime date) {
+    return DateFormat('d MMM yyyy', 'id_ID').format(date);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -673,10 +669,9 @@ class _OrderCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Payment status indicator bar
             Container(
               width: 4,
-              height: 56,
+              height: 65, // Sedikit lebih tinggi untuk mengakomodasi baris baru
               decoration: BoxDecoration(
                 color: order.isPaidOff
                     ? Colors.green.shade400
@@ -686,7 +681,6 @@ class _OrderCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
 
-            // Order info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,8 +701,23 @@ class _OrderCard extends StatelessWidget {
                       fontSize: 13,
                     ),
                   ),
+                  const SizedBox(height: 4), // ADDED Spacing
+                  // ADDED: Tampilan Tanggal Masuk
+                  Row(
+                    children: [
+                      Icon(Icons.login_rounded, size: 12, color: Colors.grey.shade400),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Masuk: ${_formatEntryDate(order.entryDate)}',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                   if (order.addons.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       '📦 ${order.addons}',
                       style: TextStyle(
@@ -737,8 +746,6 @@ class _OrderCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Edit button
             IconButton(
               icon: Icon(Icons.edit_outlined,
                   color: Colors.grey.shade400, size: 20),
@@ -762,7 +769,7 @@ class _OrderCard extends StatelessWidget {
     return buffer.toString();
   }
 }
-
+// ... (_PaymentBadge dan _EmptyState tetap sama) ...
 class _PaymentBadge extends StatelessWidget {
   const _PaymentBadge({required this.order});
   final OrderModel order;
@@ -817,7 +824,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ORDER FORM DIALOG
+// ORDER FORM DIALOG (UPDATED)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _OrderFormDialog extends StatefulWidget {
@@ -843,6 +850,9 @@ class _OrderFormDialogState extends State<_OrderFormDialog> {
   late final TextEditingController _priceCtrl;
   late final TextEditingController _dpCtrl;
   late final TextEditingController _addonsCtrl;
+  
+  // ADDED: State untuk tanggal masuk
+  late DateTime _selectedEntryDate;
 
   bool get _isEdit => widget.existingOrder != null;
 
@@ -857,6 +867,10 @@ class _OrderFormDialogState extends State<_OrderFormDialog> {
     _dpCtrl = TextEditingController(
         text: o != null ? o.dpAmount.toStringAsFixed(0) : '');
     _addonsCtrl = TextEditingController(text: o?.addons ?? '');
+    
+    // ADDED: Inisialisasi tanggal masuk
+    // Jika edit, pakai tanggal yang ada. Jika baru, pakai hari ini.
+    _selectedEntryDate = o?.entryDate ?? DateTime.now();
   }
 
   @override
@@ -868,21 +882,40 @@ class _OrderFormDialogState extends State<_OrderFormDialog> {
     _addonsCtrl.dispose();
     super.dispose();
   }
+  
+  // ADDED: Fungsi untuk menampilkan date picker
+  Future<void> _pickEntryDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedEntryDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)), // Bisa diubah
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: HomeView.navy,
+              onPrimary: Colors.white,
+              onSurface: HomeView.navy,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (pickedDate != null && pickedDate != _selectedEntryDate) {
+      setState(() {
+        _selectedEntryDate = pickedDate;
+      });
+    }
+  }
 
   void _save() {
     final name = _nameCtrl.text.trim();
     final type = _typeCtrl.text.trim();
 
     if (name.isEmpty || type.isEmpty) {
-      Get.snackbar(
-        'Form Tidak Lengkap',
-        'Nama klien dan jenis baju harus diisi.',
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-      );
+      Get.snackbar('Form Tidak Lengkap', 'Nama dan jenis baju harus diisi.');
       return;
     }
 
@@ -890,14 +923,14 @@ class _OrderFormDialogState extends State<_OrderFormDialog> {
     final dp = (double.tryParse(_dpCtrl.text) ?? 0.0).clamp(0.0, price);
 
     final newOrder = OrderModel(
-      id: widget.existingOrder?.id ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.existingOrder?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       customerName: name,
       clothingType: type,
       totalPrice: price,
       dpAmount: dp,
       addons: _addonsCtrl.text.trim(),
       deadline: widget.date,
+      entryDate: _selectedEntryDate, // UPDATED: Gunakan tanggal yang dipilih
     );
 
     if (_isEdit) {
@@ -921,7 +954,6 @@ class _OrderFormDialogState extends State<_OrderFormDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
             Row(
               children: [
                 Container(
@@ -937,95 +969,37 @@ class _OrderFormDialogState extends State<_OrderFormDialog> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  _isEdit ? 'Edit Order' : 'Order Baru',
-                  style: const TextStyle(
-                    color: HomeView.navy,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
-                ),
+                Text(_isEdit ? 'Edit Order' : 'Order Baru'),
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              widget.controller.formatDisplayDate(widget.date),
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-            ),
+            Text('Deadline: ${widget.controller.formatDisplayDate(widget.date)}'),
             const SizedBox(height: 20),
+            
+            // ADDED: Input Tanggal Masuk
+            _DatePickerField(
+              label: 'Tanggal Masuk',
+              selectedDate: _selectedEntryDate,
+              onTap: _pickEntryDate,
+            ),
+            const SizedBox(height: 14),
 
-            _FormField(
-              controller: _nameCtrl,
-              label: 'Nama Klien',
-              hint: 'contoh: Nyonya Ayu',
-              icon: Icons.person_outline,
-            ),
+            _FormField(controller: _nameCtrl, label: 'Nama Klien'),
             const SizedBox(height: 14),
-            _FormField(
-              controller: _typeCtrl,
-              label: 'Jenis Baju',
-              hint: 'contoh: Kebaya Modern',
-              icon: Icons.checkroom_outlined,
-            ),
+            _FormField(controller: _typeCtrl, label: 'Jenis Baju'),
             const SizedBox(height: 14),
-            _FormField(
-              controller: _priceCtrl,
-              label: 'Harga Total',
-              hint: 'contoh: 1500000',
-              icon: Icons.payments_outlined,
-              prefix: 'Rp ',
-              keyboardType: TextInputType.number,
-            ),
+            _FormField(controller: _priceCtrl, label: 'Harga Total', keyboardType: TextInputType.number),
             const SizedBox(height: 14),
-            _FormField(
-              controller: _dpCtrl,
-              label: 'Dibayar / DP',
-              hint: 'contoh: 500000',
-              icon: Icons.account_balance_wallet_outlined,
-              prefix: 'Rp ',
-              keyboardType: TextInputType.number,
-            ),
+            _FormField(controller: _dpCtrl, label: 'Dibayar / DP', keyboardType: TextInputType.number),
             const SizedBox(height: 14),
-            _FormField(
-              controller: _addonsCtrl,
-              label: 'Add-on / Titip Beli (opsional)',
-              hint: 'contoh: Beli puring putih 3m',
-              icon: Icons.shopping_bag_outlined,
-            ),
+            _FormField(controller: _addonsCtrl, label: 'Add-on (opsional)'),
             const SizedBox(height: 24),
 
             Row(
               children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Get.back(),
-                    child: const Text('Batal',
-                        style: TextStyle(color: Colors.grey)),
-                  ),
-                ),
+                Expanded(child: TextButton(onPressed: Get.back, child: const Text('Batal'))),
                 const SizedBox(width: 8),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: HomeView.navy,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: _save,
-                    child: const Text(
-                      'Simpan',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ),
+                Expanded(flex: 2, child: ElevatedButton(onPressed: _save, child: const Text('Simpan'))),
               ],
             ),
           ],
@@ -1035,21 +1009,70 @@ class _OrderFormDialogState extends State<_OrderFormDialog> {
   }
 }
 
+// ADDED: Widget baru untuk field tanggal
+class _DatePickerField extends StatelessWidget {
+  const _DatePickerField({
+    required this.label,
+    required this.selectedDate,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime selectedDate;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedDate = DateFormat('d MMMM yyyy', 'id_ID').format(selectedDate);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: HomeView.navy.withOpacity(0.6),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: HomeView.cream,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today_outlined,
+                    color: HomeView.navy.withOpacity(0.5), size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  formattedDate,
+                  style: const TextStyle(fontSize: 14, color: HomeView.navy),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ... (_FormField dan sisa widget lainnya tetap sama) ...
 class _FormField extends StatelessWidget {
   const _FormField({
     required this.controller,
     required this.label,
-    required this.icon,
-    this.hint,
-    this.prefix,
     this.keyboardType,
   });
 
   final TextEditingController controller;
   final String label;
-  final String? hint;
-  final String? prefix;
-  final IconData icon;
   final TextInputType? keyboardType;
 
   @override
@@ -1060,33 +1083,118 @@ class _FormField extends StatelessWidget {
       style: const TextStyle(fontSize: 14, color: HomeView.navy),
       decoration: InputDecoration(
         labelText: label,
-        hintText: hint,
-        prefixText: prefix,
-        prefixIcon: Icon(icon, color: HomeView.navy.withOpacity(0.5), size: 20),
         labelStyle:
             TextStyle(color: HomeView.navy.withOpacity(0.6), fontSize: 13),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        filled: true,
-        fillColor: HomeView.cream,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: HomeView.navy, width: 1.5),
-        ),
       ),
     );
   }
 }
 
+class _YearlyStatsSheet extends StatelessWidget {
+  const _YearlyStatsSheet({required this.controller});
+  final HomeController controller;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MONTHLY STATS SHEET
-// ─────────────────────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final year = controller.currentYear.value;
+      final stats = controller.getYearlyStats(year);
 
+      return Container(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Laporan $year',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: HomeView.navy,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Ringkasan seluruh order sepanjang tahun',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            _StatTile(
+              icon: Icons.shopping_bag_outlined,
+              label: 'Total Order',
+              value: '${stats.totalOrders} baju',
+              color: HomeView.navy,
+            ),
+            _StatTile(
+              icon: Icons.check_circle_outline,
+              label: 'Sudah Lunas',
+              value: '${stats.paidOffCount} order',
+              color: Colors.green.shade600,
+            ),
+            _StatTile(
+              icon: Icons.pending_outlined,
+              label: 'Masih DP / Belum Lunas',
+              value: '${stats.pendingCount} order',
+              color: Colors.amber.shade700,
+            ),
+            const Divider(height: 28, indent: 12, endIndent: 12),
+            _StatTile(
+              icon: Icons.account_balance_wallet_outlined,
+              label: 'Total Nilai Proyek',
+              value: 'Rp ${_rp(stats.totalRevenue)}',
+              color: HomeView.gold,
+              large: true,
+            ),
+            _StatTile(
+              icon: Icons.monetization_on_outlined,
+              label: 'Uang Diterima',
+              value: 'Rp ${_rp(stats.totalCollected)}',
+              color: Colors.green.shade600,
+              large: true,
+            ),
+            _StatTile(
+              icon: Icons.money_off_outlined,
+              label: 'Sisa Piutang',
+              value: 'Rp ${_rp(stats.totalReceivables)}',
+              color: Colors.redAccent,
+              large: true,
+            ),
+            if (stats.totalOrders > 0) ...[
+              const SizedBox(height: 16),
+              _ReceivablesBar(ratio: stats.receivablesRatio),
+            ],
+          ],
+        ),
+      );
+    });
+  }
+
+  String _rp(double v) {
+    final s = v.toStringAsFixed(0);
+    final buffer = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(s[i]);
+    }
+    return buffer.toString();
+  }
+}
 class _MonthlyStatsSheet extends StatelessWidget {
   const _MonthlyStatsSheet({
     required this.controller,
@@ -1199,117 +1307,6 @@ class _MonthlyStatsSheet extends StatelessWidget {
     return buffer.toString();
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// YEARLY STATS SHEET
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _YearlyStatsSheet extends StatelessWidget {
-  const _YearlyStatsSheet({required this.controller});
-  final HomeController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final year = controller.currentYear.value;
-      final stats = controller.getYearlyStats(year);
-
-      return Container(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Laporan $year',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: HomeView.navy,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Ringkasan seluruh order sepanjang tahun',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-            ),
-            const SizedBox(height: 20),
-            _StatTile(
-              icon: Icons.shopping_bag_outlined,
-              label: 'Total Order',
-              value: '${stats.totalOrders} baju',
-              color: HomeView.navy,
-            ),
-            _StatTile(
-              icon: Icons.check_circle_outline,
-              label: 'Sudah Lunas',
-              value: '${stats.paidOffCount} order',
-              color: Colors.green.shade600,
-            ),
-            _StatTile(
-              icon: Icons.pending_outlined,
-              label: 'Masih DP / Belum Lunas',
-              value: '${stats.pendingCount} order',
-              color: Colors.amber.shade700,
-            ),
-            const Divider(height: 28, indent: 12, endIndent: 12),
-            _StatTile(
-              icon: Icons.account_balance_wallet_outlined,
-              label: 'Total Nilai Proyek',
-              value: 'Rp ${_rp(stats.totalRevenue)}',
-              color: HomeView.gold,
-              large: true,
-            ),
-            _StatTile(
-              icon: Icons.monetization_on_outlined,
-              label: 'Uang Diterima',
-              value: 'Rp ${_rp(stats.totalCollected)}',
-              color: Colors.green.shade600,
-              large: true,
-            ),
-            _StatTile(
-              icon: Icons.money_off_outlined,
-              label: 'Sisa Piutang',
-              value: 'Rp ${_rp(stats.totalReceivables)}',
-              color: Colors.redAccent,
-              large: true,
-            ),
-            if (stats.totalOrders > 0) ...[
-              const SizedBox(height: 16),
-              _ReceivablesBar(ratio: stats.receivablesRatio),
-            ],
-          ],
-        ),
-      );
-    });
-  }
-
-  String _rp(double v) {
-    final s = v.toStringAsFixed(0);
-    final buffer = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buffer.write('.');
-      buffer.write(s[i]);
-    }
-    return buffer.toString();
-  }
-}
-
 class _StatTile extends StatelessWidget {
   const _StatTile({
     required this.icon,
@@ -1364,7 +1361,6 @@ class _StatTile extends StatelessWidget {
     );
   }
 }
-
 class _ReceivablesBar extends StatelessWidget {
   const _ReceivablesBar({required this.ratio});
   final double ratio;

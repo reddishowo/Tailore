@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'app/routes/app_pages.dart';
 import 'app/services/notification_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
 
   // Lock to portrait only (sesuai desain kalender)
   await SystemChrome.setPreferredOrientations([
